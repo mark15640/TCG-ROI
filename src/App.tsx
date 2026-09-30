@@ -7,6 +7,7 @@ import { GradeOutlookSection } from './components/GradeOutlookSection';
 import { ResultsSection } from './components/ResultsSection';
 import { GradersSection } from './components/GradersSection';
 import { CostsSection } from './components/CostsSection';
+import { useTheme } from './theme';
 
 export type Update = (mutate: (draft: Inputs) => void) => void;
 
@@ -49,6 +50,7 @@ function loadInputs(): Inputs {
 export default function App() {
   const [inputs, setInputs] = useState<Inputs>(loadInputs);
   const [tab, setTab] = useState<TabId>('results');
+  const [theme, toggleTheme] = useTheme();
 
   useEffect(() => {
     try {
@@ -74,15 +76,27 @@ export default function App() {
           <h1>TCG Grading ROI</h1>
           <p className="muted">Grade it or sell it raw? Every number is after eBay fees, postage and supplies.</p>
         </div>
-        <button
-          type="button"
-          className="secondary"
-          onClick={() => {
-            if (confirm('Reset every input to its default?')) setInputs(defaultInputs());
-          }}
-        >
-          Reset all
-        </button>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="secondary theme-toggle"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to day mode' : 'Switch to night mode'}
+            title={theme === 'dark' ? 'Switch to day mode' : 'Switch to night mode'}
+          >
+            <span aria-hidden>{theme === 'dark' ? '☀️' : '🌙'}</span>
+            {theme === 'dark' ? 'Day' : 'Night'}
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => {
+              if (confirm('Reset every input to its default?')) setInputs(defaultInputs());
+            }}
+          >
+            Reset
+          </button>
+        </div>
       </header>
 
       <CardSection inputs={inputs} update={update} />

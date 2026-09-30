@@ -2,10 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="data:," />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>TCG Grading ROI</title>
     <meta name="description" content="Compare PSA, CGC, SGC, BGS and TAG grading against selling raw, after eBay fees, shipping and supplies." />
+    <meta name="theme-color" content="#f5f6f8" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Grading ROI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script>
+      // Apply the saved day/night choice before first paint so the page doesn't flash.
+      try {
+        var t = localStorage.getItem('tcg-roi:theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

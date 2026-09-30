@@ -21,12 +21,13 @@
   color: var(--text);
 }
 
+/* Night theme: follows the system unless the user picked Day or Night (data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1216;
-    --surface: #171b21;
-    --surface-2: #1f242c;
-    --border: #2d333d;
+  :root:not([data-theme='light']) {
+    --bg: #0b0d10;
+    --surface: #15181d;
+    --surface-2: #1d2128;
+    --border: #2b313a;
     --text: #e6e9ee;
     --muted: #97a1ae;
     --accent: #7c95ff;
@@ -39,6 +40,23 @@
     --warn-soft: #2e2613;
     color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+  --bg: #0b0d10;
+  --surface: #15181d;
+  --surface-2: #1d2128;
+  --border: #2b313a;
+  --text: #e6e9ee;
+  --muted: #97a1ae;
+  --accent: #7c95ff;
+  --accent-soft: #232b48;
+  --good: #4cc38a;
+  --good-soft: #15291f;
+  --bad: #ff7b72;
+  --bad-soft: #321a1a;
+  --warn: #e3b341;
+  --warn-soft: #2e2613;
+  color-scheme: dark;
 }
 
 * {
@@ -681,4 +699,18 @@ button.icon:hover {
 footer {
   text-align: center;
   padding-top: 4px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+body {
+  transition: background 0.15s;
 }

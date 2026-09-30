@@ -16,7 +16,21 @@ The page has two parts. At the top you enter the card: price, condition, and whi
 - **Submission costs.** Shipping to the grader and return shipping are split across the cards in the submission, plus card savers.
 - **Tier selection.** By default it picks the cheapest tier whose declared-value cap covers the expected graded value. You can also choose a tier yourself.
 
-Inputs are saved in your browser's localStorage.
+Inputs are saved in your browser's localStorage. The 🌙 / ☀️ button in the header switches between night and day mode. Until you pick one, it follows your device's setting.
+
+## Website and app
+
+The same build works both as a website and as an installable app (a Progressive Web App). Once it's hosted on HTTPS:
+
+- **iPhone / iPad (Safari):** Share → *Add to Home Screen*
+- **Android (Chrome):** menu → *Install app*
+- **Windows / Mac (Chrome or Edge):** the install icon in the address bar
+
+The installed app opens in its own window with no browser bar. After the first visit it works offline. It updates itself when a new version is deployed.
+
+### Hosting on GitHub Pages
+
+`.github/workflows/deploy.yml` tests, builds and deploys the site every time `main` is pushed. To turn it on once: go to the repo's **Settings → Pages** and set **Source** to **GitHub Actions**. The site will be at `https://<user>.github.io/<repo>/`.
 
 ## How the numbers work
 
