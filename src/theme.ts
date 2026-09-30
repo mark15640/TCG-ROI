@@ -5,13 +5,19 @@ export type Theme = 'light' | 'dark';
 const STORAGE_KEY = 'tcg-roi:theme';
 const media = () => window.matchMedia?.('(prefers-color-scheme: dark)');
 
+const asTheme = (t: unknown): Theme | null => (t === 'light' || t === 'dark' ? t : null);
+
 function savedTheme(): Theme | null {
   try {
-    const t = localStorage.getItem(STORAGE_KEY);
-    return t === 'light' || t === 'dark' ? t : null;
+    return asTheme(localStorage.getItem(STORAGE_KEY));
   } catch {
     return null;
   }
+}
+
+/** The user's saved choice, else a theme the hosting page already set on <html>. */
+function initialTheme(): Theme | null {
+  return savedTheme() ?? asTheme(document.documentElement.dataset.theme);
 }
 
 function systemTheme(): Theme {
@@ -20,7 +26,7 @@ function systemTheme(): Theme {
 
 /** Current day/night theme. Follows the system until the user picks one, then remembers it. */
 export function useTheme(): [Theme, () => void] {
-  const [chosen, setChosen] = useState<Theme | null>(savedTheme);
+  const [chosen, setChosen] = useState<Theme | null>(initialTheme);
   const [system, setSystem] = useState<Theme>(systemTheme);
   const theme = chosen ?? system;
 
@@ -33,9 +39,8 @@ export function useTheme(): [Theme, () => void] {
   }, []);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (chosen) root.dataset.theme = chosen;
-    else delete root.dataset.theme;
+    // Only ever set the attribute; clearing it could discard a theme the hosting page chose.
+    if (chosen) document.documentElement.dataset.theme = chosen;
     // Match the browser / installed-app title bar to the page.
     document
       .querySelector('meta[name="theme-color"]')

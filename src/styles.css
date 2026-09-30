@@ -79,9 +79,18 @@
   box-sizing: border-box;
 }
 
+/* Set text color on body itself (not only :root) so a host page's own body color can't win,
+   and let controls inherit it instead of using the browser's fixed defaults. */
 body {
   margin: 0;
   background: var(--bg);
+  color: var(--text);
+}
+button,
+input,
+select,
+textarea {
+  color: inherit;
 }
 
 h1,
