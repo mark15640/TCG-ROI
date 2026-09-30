@@ -2,11 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     // Makes the site installable as an app (home screen / desktop) that also works offline.
     VitePWA({
+      // The single-file preview build runs where service workers aren't allowed.
+      disable: mode === 'single',
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
@@ -32,4 +34,4 @@ export default defineConfig({
     }),
   ],
   base: './',
-});
+}));

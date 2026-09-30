@@ -51,6 +51,7 @@ export default function App() {
   const [inputs, setInputs] = useState<Inputs>(loadInputs);
   const [tab, setTab] = useState<TabId>('results');
   const [theme, toggleTheme] = useTheme();
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     try {
@@ -89,12 +90,18 @@ export default function App() {
           </button>
           <button
             type="button"
-            className="secondary"
+            className={`secondary ${confirmReset ? 'danger' : ''}`}
             onClick={() => {
-              if (confirm('Reset every input to its default?')) setInputs(defaultInputs());
+              if (confirmReset) {
+                setInputs(defaultInputs());
+                setConfirmReset(false);
+              } else {
+                setConfirmReset(true);
+              }
             }}
+            onBlur={() => setConfirmReset(false)}
           >
-            Reset
+            {confirmReset ? 'Tap again to reset' : 'Reset'}
           </button>
         </div>
       </header>

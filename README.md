@@ -52,7 +52,8 @@ Grading fees, turnaround times, postage and grade premiums change often, and pre
 npm install
 npm run dev        # local dev server
 npm test           # unit tests for the ROI math
-npm run build      # typecheck + production build to dist/
+npm run build      # typecheck + production build to dist/ (website + installable app)
+npm run build:single  # one self-contained HTML file in dist-single/ (no offline support)
 ```
 
 Built with React, TypeScript and Vite. The build is a static site, so `dist/` can be hosted anywhere (GitHub Pages, Netlify, Vercel).

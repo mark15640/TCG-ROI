@@ -722,3 +722,8 @@ body {
   gap: 4px 10px;
   margin-top: -6px;
 }
+button.secondary.danger {
+  border-color: var(--bad);
+  color: var(--bad);
+  background: var(--bad-soft);
+}
