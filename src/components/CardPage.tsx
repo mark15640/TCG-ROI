@@ -10,6 +10,7 @@ import { GradeOutlookSection } from './GradeOutlookSection';
 import { GradersSection } from './GradersSection';
 import { ResultsSection } from './ResultsSection';
 import { usd } from './fields';
+import { FadeImage, tilt } from './motion';
 
 const TABS = [
   { id: 'results', label: 'Results' },
@@ -45,7 +46,10 @@ function CardHeader({
   const updated = fmtDate(card.pricesUpdated);
   return (
     <section className="card card-header-panel">
-      <div className="card-art">{src ? <img src={src} alt={card.name} /> : <span className="no-art">No image</span>}</div>
+      <div className="card-art" {...tilt(14)}>
+        {src ? <FadeImage src={src} alt={card.name} eager /> : <span className="no-art">No image</span>}
+        <span className="sheen" aria-hidden="true" />
+      </div>
       <div className="card-info">
         <div>
           <h2>{card.name}</h2>

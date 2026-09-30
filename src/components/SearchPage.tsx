@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { EXAMPLES } from '../lib/examples';
 import { defaultVariant, getCard, imageUrl, nameTerm, nmPriceOf, peekSearch, searchCards, type CardSummary } from '../lib/tcgdex';
 import { usd } from './fields';
+import { FadeImage, stagger, tilt } from './motion';
 
 const PAGE = 24;
 const SUGGESTIONS = ['charizard 151', 'pikachu', 'umbreon', 'mew ex', 'gengar'];
@@ -45,12 +46,13 @@ function PriceTag({ id }: { id: string }) {
   return <span className="price-tag">{usd(price)}</span>;
 }
 
-function ResultTile({ card, onOpen }: { card: CardSummary; onOpen: () => void }) {
+function ResultTile({ card, index, onOpen }: { card: CardSummary; index: number; onOpen: () => void }) {
   const src = imageUrl(card.image, 'low');
   return (
-    <button type="button" className="result" onClick={onOpen}>
+    <button type="button" className="result" style={stagger(index)} onClick={onOpen} {...tilt(12)}>
       <span className="result-art">
-        {src ? <img src={src} alt="" loading="lazy" /> : <span className="no-art">No image</span>}
+        {src ? <FadeImage src={src} alt="" /> : <span className="no-art">No image</span>}
+        <span className="sheen" aria-hidden="true" />
       </span>
       <span className="result-name">{card.name}</span>
       <span className="result-set">{card.setName}</span>
@@ -123,6 +125,11 @@ export function SearchPage({
   return (
     <div className="search-page">
       <section className="search-hero">
+        <div className="hero-glow" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
         <h2>Find your card</h2>
         <p className="muted">Search by name, then add the set or number to narrow it down.</p>
         <div className="search-box">
@@ -196,7 +203,17 @@ export function SearchPage({
         </div>
       )}
 
-      {term && !error && results === null && loading && <p className="search-message muted">Searching…</p>}
+      {term && !error && results === null && loading && (
+        <div className="results-grid" aria-label="Searching…" aria-busy="true">
+          {Array.from({ length: 8 }, (_, i) => (
+            <div key={i} className="result skeleton" style={stagger(i, 60)} aria-hidden="true">
+              <span className="result-art" />
+              <span className="bar w70" />
+              <span className="bar w45" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {term && !error && results && (
         <>
@@ -213,8 +230,8 @@ export function SearchPage({
             </div>
           )}
           <div className="results-grid">
-            {results.slice(0, shown).map((c) => (
-              <ResultTile key={c.id} card={c} onOpen={() => onOpenCard(c.id)} />
+            {results.slice(0, shown).map((c, i) => (
+              <ResultTile key={c.id} card={c} index={i % PAGE} onOpen={() => onOpenCard(c.id)} />
             ))}
           </div>
           {results.length > shown && (

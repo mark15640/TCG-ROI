@@ -14,6 +14,12 @@
   --warn: #9a6700;
   --warn-soft: #fff5d6;
   --radius: 10px;
+  /* Holographic glow behind the search hero */
+  --holo-1: rgb(59 91 219 / 0.3);
+  --holo-2: rgb(214 51 132 / 0.2);
+  --holo-3: rgb(22 163 148 / 0.24);
+  --sheen: rgb(255 255 255 / 0.55);
+  --shadow-lift: 0 14px 30px -12px rgb(27 31 36 / 0.28);
   color-scheme: light;
   font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 15px;
@@ -38,6 +44,11 @@
     --bad-soft: #321a1a;
     --warn: #e3b341;
     --warn-soft: #2e2613;
+    --holo-1: rgb(124 149 255 / 0.22);
+    --holo-2: rgb(236 72 153 / 0.14);
+    --holo-3: rgb(45 212 191 / 0.13);
+    --sheen: rgb(255 255 255 / 0.28);
+    --shadow-lift: 0 16px 34px -12px rgb(0 0 0 / 0.7);
     color-scheme: dark;
   }
 }
@@ -56,6 +67,11 @@
   --bad-soft: #321a1a;
   --warn: #e3b341;
   --warn-soft: #2e2613;
+  --holo-1: rgb(124 149 255 / 0.22);
+  --holo-2: rgb(236 72 153 / 0.14);
+  --holo-3: rgb(45 212 191 / 0.13);
+  --sheen: rgb(255 255 255 / 0.28);
+  --shadow-lift: 0 16px 34px -12px rgb(0 0 0 / 0.7);
   color-scheme: dark;
 }
 
@@ -749,7 +765,6 @@ button.secondary.danger {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-block: 12px 4px;
 }
 .search-hero h2 {
   font-size: 1.5rem;
@@ -763,6 +778,7 @@ button.secondary.danger {
 }
 .search-box svg {
   position: absolute;
+  z-index: 1;
   left: 16px;
   width: 20px;
   height: 20px;
@@ -789,6 +805,7 @@ button.secondary.danger {
 }
 .search-box .clear {
   position: absolute;
+  z-index: 1;
   right: 10px;
   font-size: 1.4rem;
 }
@@ -819,6 +836,10 @@ button.secondary.danger {
   }
 }
 .result {
+  --rx: 0deg;
+  --ry: 0deg;
+  --lift: 0px;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -829,29 +850,45 @@ button.secondary.danger {
   background: var(--surface);
   color: var(--text);
   min-width: 0;
-  transition: border-color 0.12s, transform 0.12s;
+  transform: perspective(700px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(var(--lift));
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.25s,
+    border-color 0.2s;
+  animation: rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  animation-delay: var(--delay, 0ms);
+  will-change: transform;
 }
-.result:hover {
+.result:hover,
+.result:focus-visible {
+  --lift: -4px;
   border-color: var(--accent);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
 }
-@media (prefers-reduced-motion: reduce) {
-  .result {
-    transition: none;
-  }
-  .result:hover {
-    transform: none;
-  }
+.result[data-tilting] {
+  /* Follow the pointer closely while tilting; ease back on leave. */
+  transition:
+    transform 0.08s linear,
+    box-shadow 0.25s,
+    border-color 0.2s;
+}
+.result:active {
+  --lift: -1px;
 }
 .result-art {
+  position: relative;
   display: grid;
   place-items: center;
   aspect-ratio: 63 / 88;
   max-width: 100%;
   border-radius: 7px;
   overflow: hidden;
-  background: var(--surface-2);
+  background: linear-gradient(100deg, var(--surface-2) 30%, var(--border) 50%, var(--surface-2) 70%) 0 0 / 250% 100%;
+  animation: shimmer 1.4s linear infinite;
   margin-bottom: 5px;
+}
+.result-art:has(.fade-img.loaded) {
+  animation: none;
 }
 .result-art img {
   width: 100%;
@@ -976,4 +1013,262 @@ button.link.small {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* ---- Motion ---- */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: perspective(700px) translateY(22px) scale(0.96);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes shimmer {
+  to {
+    background-position: -250% 0;
+  }
+}
+@keyframes drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(8%, -12%) scale(1.15);
+  }
+  66% {
+    transform: translate(-6%, 10%) scale(0.95);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.fade-img {
+  opacity: 0;
+  transform: scale(1.04);
+  transition:
+    opacity 0.45s ease,
+    transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.fade-img.loaded {
+  opacity: 1;
+  transform: none;
+}
+
+/* Foil sheen: a soft light band that follows the pointer across the art. */
+.sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 30%), var(--sheen), transparent 45%),
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      rgb(255 0 128 / 0.08) 42%,
+      rgb(0 200 255 / 0.1) 50%,
+      rgb(255 230 0 / 0.08) 58%,
+      transparent 70%
+    );
+  background-size:
+    100% 100%,
+    250% 250%;
+  background-position:
+    0 0,
+    var(--mx, 50%) var(--my, 50%);
+  mix-blend-mode: soft-light;
+  transition: opacity 0.3s;
+}
+.result:hover .sheen,
+.card-art[data-tilting] .sheen {
+  opacity: 1;
+}
+
+/* Search hero: a slow holographic glow behind the search bar. */
+.search-hero {
+  position: relative;
+  isolation: isolate;
+  padding: 28px 22px 22px;
+  margin-inline: -6px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+  animation: fade-in 0.5s ease backwards;
+}
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.hero-glow span {
+  position: absolute;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  animation: drift 18s ease-in-out infinite;
+}
+.hero-glow span:nth-child(1) {
+  background: radial-gradient(circle, var(--holo-1), transparent 65%);
+  top: -35%;
+  left: -10%;
+}
+.hero-glow span:nth-child(2) {
+  background: radial-gradient(circle, var(--holo-2), transparent 65%);
+  top: -20%;
+  right: -15%;
+  animation-duration: 22s;
+  animation-delay: -6s;
+}
+.hero-glow span:nth-child(3) {
+  background: radial-gradient(circle, var(--holo-3), transparent 65%);
+  bottom: -55%;
+  left: 30%;
+  animation-duration: 26s;
+  animation-delay: -12s;
+}
+.search-box input {
+  transition:
+    box-shadow 0.25s,
+    border-color 0.25s,
+    transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.search-box input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--accent-soft),
+    var(--shadow-lift);
+  transform: translateY(-1px);
+}
+.search-idle .chip {
+  animation: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+.search-idle .chip:nth-child(2) {
+  animation-delay: 40ms;
+}
+.search-idle .chip:nth-child(3) {
+  animation-delay: 80ms;
+}
+.search-idle .chip:nth-child(4) {
+  animation-delay: 120ms;
+}
+.search-idle .chip:nth-child(5) {
+  animation-delay: 160ms;
+}
+
+/* Loading placeholders */
+.result.skeleton {
+  pointer-events: none;
+}
+.result.skeleton .bar {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  margin-top: 5px;
+  background: linear-gradient(100deg, var(--surface-2) 30%, var(--border) 50%, var(--surface-2) 70%) 0 0 / 250% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.result.skeleton .w70 {
+  width: 70%;
+}
+.result.skeleton .w45 {
+  width: 45%;
+}
+
+/* Card page: sections slide in one after another. */
+.card-page > * {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+.card-page > :nth-child(2) {
+  animation-delay: 60ms;
+}
+.card-page > :nth-child(3) {
+  animation-delay: 120ms;
+}
+.card-page > :nth-child(4) {
+  animation-delay: 180ms;
+}
+.card-art {
+  position: relative;
+  --rx: 0deg;
+  --ry: 0deg;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition:
+    transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.3s;
+  box-shadow: var(--shadow-lift);
+}
+.card-art[data-tilting] {
+  transition:
+    transform 0.08s linear,
+    box-shadow 0.3s;
+}
+
+/* Results tab: option cards and the recommendation settle in. */
+.results .banner,
+.results .option {
+  animation: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+.results .option:nth-child(2) {
+  animation-delay: 50ms;
+}
+.results .option:nth-child(3) {
+  animation-delay: 100ms;
+}
+.results .option:nth-child(4) {
+  animation-delay: 150ms;
+}
+.results .option:nth-child(5) {
+  animation-delay: 200ms;
+}
+.results .option:nth-child(6) {
+  animation-delay: 250ms;
+}
+.option {
+  transition:
+    transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.2s;
+}
+.option:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+.tabs button {
+  transition:
+    color 0.2s,
+    border-color 0.25s;
+}
+[role='tabpanel'] {
+  animation: fade-in 0.3s ease;
+}
+.chip {
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.15s;
+}
+.chip:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .hero-glow span {
+    animation: none;
+  }
 }
