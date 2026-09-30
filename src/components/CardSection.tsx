@@ -1,57 +1,14 @@
-import { CONDITIONS, GRADE_DISTRIBUTION_PRESETS } from '../lib/data';
+import { COMPANIES, CONDITIONS, GRADE_DISTRIBUTION_PRESETS } from '../lib/data';
 import { rawPrice, saleResult } from '../lib/calc';
+import { nmPriceOf } from '../lib/tcgdex';
 import type { Inputs } from '../lib/types';
-import { Field, NumberInput, Section, usd } from './fields';
+import { Field, NumberInput, usd } from './fields';
 import type { Update } from '../App';
 
-export function CardSection({ inputs, update }: { inputs: Inputs; update: Update }) {
+function RawValueTable({ inputs }: { inputs: Inputs }) {
+  const nmNet = saleResult(inputs.nmPrice, inputs.rawSale, inputs.ebay, false).net;
   return (
-    <Section title="Card" subtitle="Start with the raw Near Mint market price (e.g. TCGplayer market or recent eBay solds).">
-      <div className="grid-2">
-        <Field label="Card name (optional)">
-          <input
-            type="text"
-            value={inputs.cardName}
-            placeholder="e.g. Charizard ex 199/165"
-            onChange={(e) => update((d) => void (d.cardName = e.target.value))}
-          />
-        </Field>
-        <Field label="Raw Near Mint price">
-          <NumberInput prefix="$" value={inputs.nmPrice} onChange={(v) => update((d) => void (d.nmPrice = v ?? 0))} />
-        </Field>
-      </div>
-
-      <div className="field">
-        <span className="field-label">Your card’s condition</span>
-        <div className="segmented" role="radiogroup" aria-label="Condition">
-          {CONDITIONS.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              role="radio"
-              aria-checked={inputs.condition === c.id}
-              className={inputs.condition === c.id ? 'active' : ''}
-              title={c.description}
-              onClick={() =>
-                update((d) => {
-                  d.condition = c.id;
-                  d.gradeDistribution = { ...GRADE_DISTRIBUTION_PRESETS[c.id] };
-                  d.distributionIsPreset = true;
-                })
-              }
-            >
-              <strong>{c.id}</strong>
-              <span>{c.label}</span>
-            </button>
-          ))}
-        </div>
-        <span className="field-hint">
-          {CONDITIONS.find((c) => c.id === inputs.condition)?.description} Changing condition also resets the likely
-          grades below.
-        </span>
-      </div>
-
-      <div className="table-scroll">
+    <div className="table-scroll">
       <table className="table compact">
         <thead>
           <tr>
@@ -66,12 +23,9 @@ export function CardSection({ inputs, update }: { inputs: Inputs; update: Update
           {CONDITIONS.map((c) => {
             const price = rawPrice({ nmPrice: inputs.nmPrice, condition: c.id, rawPriceOverride: null });
             const net = saleResult(price, inputs.rawSale, inputs.ebay, false).net;
-            const nmNet = saleResult(inputs.nmPrice, inputs.rawSale, inputs.ebay, false).net;
             return (
               <tr key={c.id} className={inputs.condition === c.id ? 'highlight' : ''}>
-                <td>
-                  {c.label} <span className="muted">({c.id})</span>
-                </td>
+                <td>{c.label}</td>
                 <td className="num">{Math.round(c.rawMultiplier * 100)}%</td>
                 <td className="num">{usd(price)}</td>
                 <td className={`num ${net < 0 ? 'neg' : ''}`}>{usd(net)}</td>
@@ -81,10 +35,111 @@ export function CardSection({ inputs, update }: { inputs: Inputs; update: Update
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+export function CardSection({ inputs, update }: { inputs: Inputs; update: Update }) {
+  const condition = CONDITIONS.find((c) => c.id === inputs.condition)!;
+  const card = inputs.card;
+  const variant = card?.variants.find((v) => v.key === card.variantKey);
+  const marketPrice = variant ? nmPriceOf(variant) : undefined;
+  const edited = marketPrice !== undefined && Math.abs(marketPrice - inputs.nmPrice) > 0.004;
+
+  return (
+    <section className="card card-inputs">
+      <div className={`card-row ${card ? 'two' : ''}`}>
+        {!card && (
+          <Field label="Card">
+            <input
+              type="text"
+              value={inputs.cardName}
+              placeholder="Card name (optional)"
+              onChange={(e) => update((d) => void (d.cardName = e.target.value))}
+            />
+          </Field>
+        )}
+        <Field
+          label="Near Mint price"
+          hint={
+            marketPrice === undefined
+              ? undefined
+              : edited
+                ? `Edited. TCGplayer market is ${usd(marketPrice)}.`
+                : 'From TCGplayer market price. You can edit it.'
+          }
+        >
+          <NumberInput prefix="$" value={inputs.nmPrice} onChange={(v) => update((d) => void (d.nmPrice = v ?? 0))} />
+        </Field>
+        <Field label="You paid">
+          <NumberInput
+            prefix="$"
+            nullable
+            placeholder="optional"
+            value={inputs.costBasis}
+            onChange={(v) => update((d) => void (d.costBasis = v))}
+          />
+        </Field>
       </div>
 
-      <div className="grid-2">
-        <Field label="Raw price override (optional)" hint="Use if you have actual sold comps for this condition.">
+      <div className="card-row two">
+        <div className="field">
+          <span className="field-label">Condition</span>
+          <div className="chips" role="radiogroup" aria-label="Condition">
+            {CONDITIONS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                role="radio"
+                aria-checked={inputs.condition === c.id}
+                className={`chip ${inputs.condition === c.id ? 'on' : ''}`}
+                title={`${c.label}: ${c.description}`}
+                onClick={() =>
+                  update((d) => {
+                    d.condition = c.id;
+                    d.gradeDistribution = { ...GRADE_DISTRIBUTION_PRESETS[c.id] };
+                    d.distributionIsPreset = true;
+                  })
+                }
+              >
+                {c.id}
+              </button>
+            ))}
+          </div>
+          <span className="field-hint">
+            {condition.label}: {condition.description}
+          </span>
+        </div>
+
+        <div className="field">
+          <span className="field-label">Compare</span>
+          <div className="chips" role="group" aria-label="Grading companies to compare">
+            {COMPANIES.map((c) => {
+              const on = inputs.companies[c.id].enabled;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={on}
+                  className={`chip ${on ? 'on' : ''}`}
+                  title={c.fullName}
+                  onClick={() => update((d) => void (d.companies[c.id].enabled = !on))}
+                >
+                  <span className="swatch" style={{ background: c.color }} />
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
+          <span className="field-hint">Pick one company to focus on it, or several to compare.</span>
+        </div>
+      </div>
+
+
+      <details className="disclosure">
+        <summary>Raw value at each condition</summary>
+        <RawValueTable inputs={inputs} />
+        <Field label="Override raw price for this condition" hint="Use if you have sold comps for this exact condition.">
           <NumberInput
             prefix="$"
             nullable
@@ -93,16 +148,7 @@ export function CardSection({ inputs, update }: { inputs: Inputs; update: Update
             onChange={(v) => update((d) => void (d.rawPriceOverride = v))}
           />
         </Field>
-        <Field label="What you paid (optional)" hint="Adds total profit figures to the results.">
-          <NumberInput
-            prefix="$"
-            nullable
-            placeholder="—"
-            value={inputs.costBasis}
-            onChange={(v) => update((d) => void (d.costBasis = v))}
-          />
-        </Field>
-      </div>
-    </Section>
+      </details>
+    </section>
   );
 }

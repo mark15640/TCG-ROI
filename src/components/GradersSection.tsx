@@ -1,67 +1,83 @@
 import { useState } from 'react';
 import { COMPANIES, GRADES } from '../lib/data';
+import { estimatedSalePrice } from '../lib/calc';
 import type { Inputs } from '../lib/types';
-import { Field, NumberInput, Section, usd } from './fields';
+import { NumberInput, usd } from './fields';
 import type { Update } from '../App';
 
 export function GradersSection({ inputs, update }: { inputs: Inputs; update: Update }) {
   const [mode, setMode] = useState<'comps' | 'multipliers'>('comps');
 
+  const selected = COMPANIES.filter((c) => inputs.companies[c.id].enabled);
+  if (selected.length === 0) {
+    return <p className="empty muted">Pick at least one grading company above.</p>;
+  }
+
   return (
-    <Section
-      title="Grading companies"
-      subtitle="Service tiers, fees and what each grade sells for. Fees are editable estimates — check each company’s current price list."
-    >
-      <div className="company-grid">
-        {COMPANIES.map((company) => {
-          const s = inputs.companies[company.id];
-          return (
-            <div className={`company-card ${s.enabled ? '' : 'disabled'}`} key={company.id}>
-              <label className="company-head">
-                <input
-                  type="checkbox"
-                  checked={s.enabled}
-                  onChange={(e) => update((d) => void (d.companies[company.id].enabled = e.target.checked))}
-                />
-                <span className="swatch" style={{ background: company.color }} />
-                <strong>{company.name}</strong>
-                <span className="muted small">{company.fullName}</span>
-              </label>
-              <Field label="Service tier">
-                <select
-                  value={s.tierId}
-                  disabled={!s.enabled}
-                  onChange={(e) => update((d) => void (d.companies[company.id].tierId = e.target.value))}
-                >
-                  <option value="auto">Auto (best fit)</option>
-                  {company.tiers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} — {usd(t.price)}
-                      {t.maxDeclaredValue !== null ? ` · ≤${usd(t.maxDeclaredValue, 0)}` : ''}
-                      {t.minCards ? ` · ${t.minCards}+ cards` : ''}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <div className="grid-2 tight">
-                <Field label="Return ship / sub.">
-                  <NumberInput
-                    prefix="$"
-                    value={s.returnShippingPerSubmission}
-                    onChange={(v) => update((d) => void (d.companies[company.id].returnShippingPerSubmission = v ?? 0))}
-                  />
-                </Field>
-                <Field label="Add-ons / card" hint={company.id === 'BGS' ? 'e.g. subgrades' : undefined}>
-                  <NumberInput
-                    prefix="$"
-                    value={s.addOnPerCard}
-                    onChange={(v) => update((d) => void (d.companies[company.id].addOnPerCard = v ?? 0))}
-                  />
-                </Field>
-              </div>
-            </div>
-          );
-        })}
+    <div className="panel">
+      <p className="panel-intro muted">
+        Service tiers and what each grade sells for. Fees are estimates, so check each company’s current price list.
+      </p>
+      <div className="table-scroll">
+        <table className="table tiers">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Service tier</th>
+              <th className="num">Return ship / submission</th>
+              <th className="num">Add-ons / card</th>
+            </tr>
+          </thead>
+          <tbody>
+            {selected.map((company) => {
+              const s = inputs.companies[company.id];
+              return (
+                <tr key={company.id}>
+                  <td>
+                    <span className="swatch" style={{ background: company.color }} />
+                    <strong>{company.name}</strong>
+                  </td>
+                  <td>
+                    <select
+                      value={s.tierId}
+                      aria-label={`${company.name} service tier`}
+                      onChange={(e) => update((d) => void (d.companies[company.id].tierId = e.target.value))}
+                    >
+                      <option value="auto">Auto (best fit)</option>
+                      {company.tiers.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}: {usd(t.price)}
+                          {t.maxDeclaredValue !== null ? `, value ≤ ${usd(t.maxDeclaredValue, 0)}` : ''}
+                          {t.minCards ? `, ${t.minCards}+ cards` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="num">
+                    <NumberInput
+                      className="cell"
+                      prefix="$"
+                      value={s.returnShippingPerSubmission}
+                      ariaLabel={`${company.name} return shipping per submission`}
+                      onChange={(v) =>
+                        update((d) => void (d.companies[company.id].returnShippingPerSubmission = v ?? 0))
+                      }
+                    />
+                  </td>
+                  <td className="num">
+                    <NumberInput
+                      className="cell"
+                      prefix="$"
+                      value={s.addOnPerCard}
+                      ariaLabel={`${company.name} add-ons per card`}
+                      onChange={(v) => update((d) => void (d.companies[company.id].addOnPerCard = v ?? 0))}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       <div className="subhead">
@@ -89,7 +105,7 @@ export function GradersSection({ inputs, update }: { inputs: Inputs; update: Upd
       </div>
       <p className="muted small">
         {mode === 'comps'
-          ? 'Enter recent sold prices for this card where you have them. Blank cells use the estimate shown (NM price × multiplier).'
+          ? 'Enter recent sold prices for this card where you have them. Blank cells use the estimate shown: scaled from the PSA sold price for that grade when you have entered one, otherwise NM price × multiplier.'
           : 'Default graded value as a multiple of the raw NM price. Premiums vary a lot by card — sold comps are always better.'}
       </p>
       <div className="table-scroll">
@@ -97,7 +113,7 @@ export function GradersSection({ inputs, update }: { inputs: Inputs; update: Upd
           <thead>
             <tr>
               <th>Grade</th>
-              {COMPANIES.map((c) => (
+              {selected.map((c) => (
                 <th key={c.id} className="num">
                   {c.name}
                 </th>
@@ -108,7 +124,7 @@ export function GradersSection({ inputs, update }: { inputs: Inputs; update: Upd
             {GRADES.map((g) => (
               <tr key={g}>
                 <td>{g}</td>
-                {COMPANIES.map((c) => {
+                {selected.map((c) => {
                   const s = inputs.companies[c.id];
                   return (
                     <td key={c.id} className="num" title={c.gradeLabels[g]}>
@@ -117,7 +133,7 @@ export function GradersSection({ inputs, update }: { inputs: Inputs; update: Upd
                           className="cell"
                           prefix="$"
                           nullable
-                          placeholder={(inputs.nmPrice * s.multipliers[g]).toFixed(0)}
+                          placeholder={estimatedSalePrice(inputs, c.id, g).toFixed(0)}
                           value={s.compOverrides[g] ?? null}
                           ariaLabel={`${c.name} ${g} sold price`}
                           onChange={(v) =>
@@ -145,6 +161,6 @@ export function GradersSection({ inputs, update }: { inputs: Inputs; update: Upd
           </tbody>
         </table>
       </div>
-    </Section>
+    </div>
   );
 }

@@ -166,11 +166,28 @@ export function selectTier(
   return [...tiers].sort((a, b) => b.price - a.price)[0];
 }
 
+function compFor(inputs: Inputs, companyId: CompanyId, grade: Grade): number | null {
+  const comp = inputs.companies[companyId].compOverrides[grade];
+  return comp !== undefined && comp !== null && comp >= 0 ? comp : null;
+}
+
+/**
+ * Estimated sale price when there's no sold comp for this company and grade. PSA is the most
+ * liquid market, so a real PSA comp for the same grade anchors the estimate (scaled by the
+ * company's premium relative to PSA). Otherwise it falls back to NM price × multiplier.
+ */
+export function estimatedSalePrice(inputs: Inputs, companyId: CompanyId, grade: Grade): number {
+  const own = inputs.companies[companyId].multipliers[grade];
+  const psaComp = companyId === 'PSA' ? null : compFor(inputs, 'PSA', grade);
+  const psaMultiplier = inputs.companies.PSA.multipliers[grade];
+  if (psaComp !== null && psaMultiplier > 0) return psaComp * (own / psaMultiplier);
+  return inputs.nmPrice * own;
+}
+
 export function gradedSalePrice(inputs: Inputs, companyId: CompanyId, grade: Grade): { price: number; fromComp: boolean } {
-  const settings = inputs.companies[companyId];
-  const comp = settings.compOverrides[grade];
-  if (comp !== undefined && comp !== null && comp >= 0) return { price: comp, fromComp: true };
-  return { price: inputs.nmPrice * settings.multipliers[grade], fromComp: false };
+  const comp = compFor(inputs, companyId, grade);
+  if (comp !== null) return { price: comp, fromComp: true };
+  return { price: estimatedSalePrice(inputs, companyId, grade), fromComp: false };
 }
 
 export function analyzeCompany(inputs: Inputs, companyId: CompanyId, raw: RawResult): CompanyResult {

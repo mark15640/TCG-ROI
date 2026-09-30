@@ -1,7 +1,7 @@
 import { SHIPPING_METHODS } from '../lib/data';
 import { materialsCost } from '../lib/calc';
 import type { Inputs, SaleSetup } from '../lib/types';
-import { Field, NumberInput, PercentInput, Section, usd } from './fields';
+import { Field, NumberInput, PercentInput, usd } from './fields';
 import type { Update } from '../App';
 
 type SaleKey = 'rawSale' | 'gradedSale';
@@ -26,7 +26,7 @@ function SaleSetupEditor({ inputs, update, which }: { inputs: Inputs; update: Up
             ))}
           </select>
         </Field>
-        <Field label="Shipping charged to buyer" hint="$0 = free shipping.">
+        <Field label="Buyer pays" hint="$0 = free shipping.">
           <NumberInput
             prefix="$"
             value={setup.shippingCharged}
@@ -35,6 +35,10 @@ function SaleSetupEditor({ inputs, update, which }: { inputs: Inputs; update: Up
         </Field>
       </div>
 
+      <details className="disclosure">
+        <summary>
+          Shipping supplies: <strong>{usd(materialsCost(setup.materials))}</strong>
+        </summary>
       <div className="table-scroll">
       <table className="table compact materials">
         <thead>
@@ -120,6 +124,7 @@ function SaleSetupEditor({ inputs, update, which }: { inputs: Inputs; update: Up
         </tfoot>
       </table>
       </div>
+      </details>
     </div>
   );
 }
@@ -127,16 +132,16 @@ function SaleSetupEditor({ inputs, update, which }: { inputs: Inputs; update: Up
 export function CostsSection({ inputs, update }: { inputs: Inputs; update: Update }) {
   const e = inputs.ebay;
   return (
-    <Section
-      title="Selling & shipping costs"
-      subtitle="eBay fees, postage and supplies for the final sale, plus the cost of getting cards to and from the grader."
-    >
+    <div className="panel">
+      <p className="panel-intro muted">
+        What it costs to sell on eBay, ship to the buyer, and get cards to and from the grader.
+      </p>
       <h3>eBay fees</h3>
       <div className="grid-4">
         <Field label="Final value fee" hint={`On order total up to ${usd(e.fvfThreshold, 0)}`}>
           <PercentInput value={e.fvfRate} onChange={(v) => update((d) => void (d.ebay.fvfRate = v))} />
         </Field>
-        <Field label="Fee above threshold">
+        <Field label={`Fee above ${usd(e.fvfThreshold, 0)}`}>
           <PercentInput value={e.fvfRateAbove} onChange={(v) => update((d) => void (d.ebay.fvfRateAbove = v))} />
         </Field>
         <Field label="Per-order fee" hint={`${usd(e.perOrderFeeLow)} if ≤ ${usd(e.perOrderFeeCutoff, 0)}`}>
@@ -146,10 +151,10 @@ export function CostsSection({ inputs, update }: { inputs: Inputs; update: Updat
             onChange={(v) => update((d) => void (d.ebay.perOrderFeeHigh = v ?? 0))}
           />
         </Field>
-        <Field label="Promoted listing rate" hint="0% if not promoting">
+        <Field label="Promoted rate" hint="0% if not promoting">
           <PercentInput value={e.promotedRate} onChange={(v) => update((d) => void (d.ebay.promotedRate = v))} />
         </Field>
-        <Field label="Buyer sales tax" hint="eBay’s fee applies to tax too">
+        <Field label="Sales tax" hint="eBay’s fee applies to tax too">
           <PercentInput value={e.salesTaxRate} onChange={(v) => update((d) => void (d.ebay.salesTaxRate = v))} />
         </Field>
       </div>
@@ -161,14 +166,14 @@ export function CostsSection({ inputs, update }: { inputs: Inputs; update: Updat
 
       <h3>Sending cards to the grader</h3>
       <div className="grid-4">
-        <Field label="Shipping to grader" hint="Per submission, insured">
+        <Field label="Ship to grader" hint="Per submission, insured">
           <NumberInput
             prefix="$"
             value={inputs.inboundShippingPerSubmission}
             onChange={(v) => update((d) => void (d.inboundShippingPerSubmission = v ?? 0))}
           />
         </Field>
-        <Field label="Cards per submission" hint="Shipping is split across these">
+        <Field label="Cards / submission" hint="Shipping is split across these">
           <NumberInput
             step={1}
             min={1}
@@ -176,7 +181,7 @@ export function CostsSection({ inputs, update }: { inputs: Inputs; update: Updat
             onChange={(v) => update((d) => void (d.cardsPerSubmission = Math.max(1, v ?? 1)))}
           />
         </Field>
-        <Field label="Submission supplies / card" hint="Card saver, sleeve">
+        <Field label="Supplies / card" hint="Card saver, sleeve">
           <NumberInput
             prefix="$"
             value={inputs.submissionSuppliesPerCard}
@@ -184,6 +189,6 @@ export function CostsSection({ inputs, update }: { inputs: Inputs; update: Updat
           />
         </Field>
       </div>
-    </Section>
+    </div>
   );
 }

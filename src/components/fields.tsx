@@ -97,28 +97,3 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
     </label>
   );
 }
-
-export function Section({
-  title,
-  subtitle,
-  children,
-  actions,
-}: {
-  title: string;
-  subtitle?: string;
-  children: ReactNode;
-  actions?: ReactNode;
-}) {
-  return (
-    <section className="card">
-      <header className="card-header">
-        <div>
-          <h2>{title}</h2>
-          {subtitle && <p className="muted">{subtitle}</p>}
-        </div>
-        {actions}
-      </header>
-      {children}
-    </section>
-  );
-}
