@@ -1,6 +1,6 @@
 import { COMPANIES, CONDITIONS, GRADE_DISTRIBUTION_PRESETS } from '../lib/data';
 import { rawPrice, saleResult } from '../lib/calc';
-import { EXAMPLES, applyExample } from '../lib/examples';
+import { nmPriceOf } from '../lib/tcgdex';
 import type { Inputs } from '../lib/types';
 import { Field, NumberInput, usd } from './fields';
 import type { Update } from '../App';
@@ -41,19 +41,34 @@ function RawValueTable({ inputs }: { inputs: Inputs }) {
 
 export function CardSection({ inputs, update }: { inputs: Inputs; update: Update }) {
   const condition = CONDITIONS.find((c) => c.id === inputs.condition)!;
+  const card = inputs.card;
+  const variant = card?.variants.find((v) => v.key === card.variantKey);
+  const marketPrice = variant ? nmPriceOf(variant) : undefined;
+  const edited = marketPrice !== undefined && Math.abs(marketPrice - inputs.nmPrice) > 0.004;
 
   return (
     <section className="card card-inputs">
-      <div className="card-row">
-        <Field label="Card">
-          <input
-            type="text"
-            value={inputs.cardName}
-            placeholder="Card name (optional)"
-            onChange={(e) => update((d) => void (d.cardName = e.target.value))}
-          />
-        </Field>
-        <Field label="Near Mint price">
+      <div className={`card-row ${card ? 'two' : ''}`}>
+        {!card && (
+          <Field label="Card">
+            <input
+              type="text"
+              value={inputs.cardName}
+              placeholder="Card name (optional)"
+              onChange={(e) => update((d) => void (d.cardName = e.target.value))}
+            />
+          </Field>
+        )}
+        <Field
+          label="Near Mint price"
+          hint={
+            marketPrice === undefined
+              ? undefined
+              : edited
+                ? `Edited. TCGplayer market is ${usd(marketPrice)}.`
+                : 'From TCGplayer market price. You can edit it.'
+          }
+        >
           <NumberInput prefix="$" value={inputs.nmPrice} onChange={(v) => update((d) => void (d.nmPrice = v ?? 0))} />
         </Field>
         <Field label="You paid">
@@ -120,20 +135,6 @@ export function CardSection({ inputs, update }: { inputs: Inputs; update: Update
         </div>
       </div>
 
-      <div className="examples">
-        <span className="muted small">Try a real card:</span>
-        {EXAMPLES.map((ex) => (
-          <button
-            key={ex.id}
-            type="button"
-            className="link"
-            title={`Prices as of ${ex.asOf}. Sources: ${ex.sources}.`}
-            onClick={() => update((d) => applyExample(d, ex))}
-          >
-            {ex.cardName}
-          </button>
-        ))}
-      </div>
 
       <details className="disclosure">
         <summary>Raw value at each condition</summary>

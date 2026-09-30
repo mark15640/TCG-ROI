@@ -98,7 +98,34 @@ export interface CompanySettings {
   multipliers: GradeMap<number>;
 }
 
+/** One printing's TCGplayer prices (USD). */
+export interface PriceVariant {
+  key: string;
+  label: string;
+  low?: number;
+  mid?: number;
+  high?: number;
+  market?: number;
+  directLow?: number;
+}
+
+/** A card picked from search, with the prices it was loaded with. */
+export interface SelectedCard {
+  id: string;
+  name: string;
+  setName: string;
+  number: string;
+  rarity?: string;
+  image?: string;
+  variants: PriceVariant[];
+  variantKey: string | null;
+  pricesUpdated?: string;
+  tcgplayerUrl?: string;
+}
+
 export interface Inputs {
+  /** Card picked from search, or null when entered by hand. */
+  card: SelectedCard | null;
   cardName: string;
   /** Market price of the card raw in Near Mint condition. */
   nmPrice: number;

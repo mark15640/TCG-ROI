@@ -2,25 +2,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { analyze } from './lib/calc';
 import { defaultInputs } from './lib/data';
 import type { Inputs } from './lib/types';
-import { CardSection } from './components/CardSection';
-import { GradeOutlookSection } from './components/GradeOutlookSection';
-import { ResultsSection } from './components/ResultsSection';
-import { GradersSection } from './components/GradersSection';
-import { CostsSection } from './components/CostsSection';
+import { CardPage } from './components/CardPage';
+import { SearchPage } from './components/SearchPage';
+import { EXAMPLES, applyExample } from './lib/examples';
+import { startManual } from './lib/selection';
+import { navigate, useRoute } from './router';
 import { useTheme } from './theme';
 
 export type Update = (mutate: (draft: Inputs) => void) => void;
 
-const STORAGE_KEY = 'tcg-roi:inputs:v1';
+const STORAGE_KEY = 'tcg-roi:inputs:v2';
 
-const TABS = [
-  { id: 'results', label: 'Results' },
-  { id: 'odds', label: 'Grade odds' },
-  { id: 'prices', label: 'Prices & tiers' },
-  { id: 'costs', label: 'Fees & shipping' },
-] as const;
+const QUERY_KEY = 'tcg-roi:query';
 
-type TabId = (typeof TABS)[number]['id'];
+function loadQuery(): string {
+  try {
+    return sessionStorage.getItem(QUERY_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
 
 function loadInputs(): Inputs {
   const defaults = defaultInputs();
@@ -32,6 +33,7 @@ function loadInputs(): Inputs {
     return {
       ...defaults,
       ...parsed,
+      card: parsed.card ?? null,
       ebay: { ...defaults.ebay, ...parsed.ebay },
       rawSale: { ...defaults.rawSale, ...parsed.rawSale },
       gradedSale: { ...defaults.gradedSale, ...parsed.gradedSale },
@@ -49,7 +51,8 @@ function loadInputs(): Inputs {
 
 export default function App() {
   const [inputs, setInputs] = useState<Inputs>(loadInputs);
-  const [tab, setTab] = useState<TabId>('results');
+  const [query, setQuery] = useState(loadQuery);
+  const route = useRoute();
   const [theme, toggleTheme] = useTheme();
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -68,13 +71,25 @@ export default function App() {
       return draft;
     });
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(QUERY_KEY, query);
+    } catch {
+      // Not remembered across reloads; fine.
+    }
+  }, [query]);
+
   const analysis = useMemo(() => analyze(inputs), [inputs]);
 
   return (
     <div className="app">
       <header className="app-header">
         <div>
-          <h1>TCG Grading ROI</h1>
+          <h1>
+            <a href="#" onClick={(e) => (e.preventDefault(), navigate({ name: 'search' }))}>
+              TCG Grading ROI
+            </a>
+          </h1>
           <p className="muted">Grade it or sell it raw? Every number is after eBay fees, postage and supplies.</p>
         </div>
         <div className="header-actions">
@@ -106,34 +121,30 @@ export default function App() {
         </div>
       </header>
 
-      <CardSection inputs={inputs} update={update} />
-
-      <section className="card tabs-card">
-        <nav className="tabs" role="tablist" aria-label="Sections">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              id={`tab-${t.id}`}
-              aria-selected={tab === t.id}
-              aria-controls={`panel-${t.id}`}
-              className={tab === t.id ? 'active' : ''}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-          {tab === 'results' && <ResultsSection analysis={analysis} inputs={inputs} />}
-          {tab === 'odds' && (
-            <GradeOutlookSection inputs={inputs} update={update} total={analysis.distributionTotal} />
-          )}
-          {tab === 'prices' && <GradersSection inputs={inputs} update={update} />}
-          {tab === 'costs' && <CostsSection inputs={inputs} update={update} />}
-        </div>
-      </section>
+      {route.name === 'search' ? (
+        <SearchPage
+          query={query}
+          setQuery={setQuery}
+          onOpenCard={(id) => navigate({ name: 'card', id })}
+          onManual={() => {
+            update(startManual);
+            navigate({ name: 'manual' });
+          }}
+          onExample={(id) => {
+            const ex = EXAMPLES.find((e) => e.id === id);
+            if (ex) update((d) => applyExample(d, ex));
+            navigate({ name: 'manual' });
+          }}
+        />
+      ) : (
+        <CardPage
+          cardId={route.name === 'card' ? route.id : null}
+          inputs={inputs}
+          update={update}
+          analysis={analysis}
+          onBack={() => navigate({ name: 'search' })}
+        />
+      )}
 
       <footer className="muted small">
         Fees and prices are editable estimates and change often. Not financial advice. Inputs are saved in this browser

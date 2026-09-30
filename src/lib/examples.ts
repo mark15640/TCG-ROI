@@ -38,6 +38,7 @@ export const EXAMPLES: CardExample[] = [
 
 /** Loads an example card's price and comps, keeping the user's fee and shipping settings. */
 export function applyExample(draft: Inputs, example: CardExample): void {
+  draft.card = null;
   draft.cardName = example.cardName;
   draft.nmPrice = example.nmPrice;
   draft.condition = example.condition;

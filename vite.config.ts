@@ -30,6 +30,27 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        // Card lookups work offline for cards already viewed; prices refresh whenever online.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.origin === 'https://api.tcgdex.net',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'tcgdex-api',
+              networkTimeoutSeconds: 6,
+              expiration: { maxEntries: 300, maxAgeSeconds: 7 * 24 * 60 * 60 },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.origin === 'https://assets.tcgdex.net',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'tcgdex-images',
+              expiration: { maxEntries: 500, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

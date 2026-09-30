@@ -4,7 +4,18 @@ A card grading ROI calculator for trading cards. Enter a card's raw Near Mint pr
 
 ## What it does
 
-The page has two parts. At the top you enter the card: price, condition, and which companies to **Compare**. Select one chip to focus on a single company, or several to compare them. Below that, four tabs hold everything else: **Results**, **Grade odds**, **Prices & tiers** (only for the companies you selected) and **Fees & shipping**.
+The app has two screens:
+
+1. **Search.** Type a card name, e.g. `charizard`, and every matching Pokémon card appears with its image, set, number and TCGplayer market price. Adding more words narrows the list: a set name (`charizard 151`), a card number (`charizard 199`) or number/total (`charizard 199/165`).
+2. **Card.** Tap a result to open it. You get the card, its TCGplayer prices for each printing (market, low, mid and high), and the ROI tools. The Near Mint price is already filled in, and you pick the condition and which grading companies to **Compare**. Four tabs hold the rest: **Results**, **Grade odds**, **Prices & tiers** and **Fees & shipping**.
+
+You can also enter a card by hand, or open the worked Charizard example, which has real graded sold prices.
+
+### Where prices come from
+
+Card data and TCGplayer prices come from [TCGdex](https://tcgdex.dev), a free API that needs no key. It covers Pokémon only and refreshes TCGplayer prices hourly. TCGplayer's own API has been closed to new developers since 2024. TCGplayer doesn't publish **graded** sale prices, so those stay estimates until you enter recent sold prices under *Prices & tiers*. The estimates are scaled from the PSA sold price for the same grade when you've entered one.
+
+Everything the app fetches from TCGdex is in `src/lib/tcgdex.ts`, so switching to another data source (for example a paid API with graded prices) only touches that file.
 
 - **Raw values by condition.** Prices the card as Near Mint, Lightly Played, Moderately Played, Heavily Played or Damaged, and shows what each one nets after eBay.
 - **Likely grades.** Each condition fills in a starting set of odds for grades 1–10. You can move the sliders to account for centering, surface and edges.

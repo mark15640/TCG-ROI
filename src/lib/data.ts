@@ -84,7 +84,9 @@ const STANDARD_LABELS: GradeMap<string> = {
 // Graded value as a multiple of the raw NM price. These are broad averages for
 // modern TCG cards; real premiums vary enormously by card, so the UI lets you
 // enter actual sold comps per grade instead.
-const PSA_MULTIPLIERS = gradeMap({ 10: 3.5, 9: 1.4, 8: 1.0, 7: 0.8, 6: 0.65, 5: 0.55, 4: 0.45, 3: 0.38, 2: 0.32, 1: 0.28 });
+// Checked against Charizard ex 199/165 (Sep 2026): PSA 10 ≈ 4.0× and PSA 9 ≈ 1.0× raw NM. Raw NM
+// prices already include the buyer's chance of a gem, so a 9 rarely sells far above raw.
+const PSA_MULTIPLIERS = gradeMap({ 10: 3.5, 9: 1.1, 8: 0.8, 7: 0.65, 6: 0.55, 5: 0.47, 4: 0.4, 3: 0.34, 2: 0.3, 1: 0.26 });
 
 function relativeTo(base: GradeMap<number>, top: number, rest: number): GradeMap<number> {
   return gradeMap(
@@ -240,6 +242,7 @@ function defaultCompanySettings(company: GradingCompany): CompanySettings {
 
 export function defaultInputs(): Inputs {
   return {
+    card: null,
     cardName: '',
     nmPrice: 100,
     condition: 'NM',
