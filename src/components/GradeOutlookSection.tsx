@@ -1,18 +1,19 @@
 import { CONDITION_BY_ID, GRADE_DISTRIBUTION_PRESETS, GRADES } from '../lib/data';
 import type { Inputs } from '../lib/types';
-import { NumberInput, Section } from './fields';
+import { NumberInput } from './fields';
 import type { Update } from '../App';
 
 export function GradeOutlookSection({ inputs, update, total }: { inputs: Inputs; update: Update; total: number }) {
   const off = Math.abs(total - 100) > 0.01;
-  const max = Math.max(1, ...GRADES.map((g) => inputs.gradeDistribution[g]));
 
   return (
-    <Section
-      title="Likely grades"
-      subtitle={`Your odds of each grade. Pre-filled for a ${CONDITION_BY_ID[inputs.condition].label} card — adjust for centering, surface and edges.`}
-      actions={
-        !inputs.distributionIsPreset && (
+    <div className="panel">
+      <div className="panel-intro">
+        <p className="muted">
+          Your odds of landing each grade, pre-filled for a {CONDITION_BY_ID[inputs.condition].label} card. Adjust for
+          centering, corners, edges and surface.
+        </p>
+        {!inputs.distributionIsPreset && (
           <button
             type="button"
             className="link"
@@ -25,9 +26,8 @@ export function GradeOutlookSection({ inputs, update, total }: { inputs: Inputs;
           >
             Reset to {inputs.condition} preset
           </button>
-        )
-      }
-    >
+        )}
+      </div>
       <div className="dist">
         {GRADES.map((g) => (
           <div className="dist-row" key={g}>
@@ -46,9 +46,6 @@ export function GradeOutlookSection({ inputs, update, total }: { inputs: Inputs;
                 })
               }
             />
-            <div className="dist-bar" aria-hidden>
-              <div style={{ width: `${(inputs.gradeDistribution[g] / max) * 100}%` }} />
-            </div>
             <NumberInput
               className="narrow"
               step={1}
@@ -68,6 +65,6 @@ export function GradeOutlookSection({ inputs, update, total }: { inputs: Inputs;
       <p className={off ? 'warn' : 'muted'}>
         Total: {total}%{off && ' — odds are scaled to 100% when calculating.'}
       </p>
-    </Section>
+    </div>
   );
 }

@@ -4,6 +4,8 @@ A card grading ROI calculator for trading cards. Enter a card's raw Near Mint pr
 
 ## What it does
 
+The page has two parts. At the top you enter the card: price, condition, and which companies to **Compare**. Select one chip to focus on a single company, or several to compare them. Below that, four tabs hold everything else: **Results**, **Grade odds**, **Prices & tiers** (only for the companies you selected) and **Fees & shipping**.
+
 - **Raw values by condition.** Prices the card as Near Mint, Lightly Played, Moderately Played, Heavily Played or Damaged, and shows what each one nets after eBay.
 - **Likely grades.** Each condition fills in a starting set of odds for grades 1–10. You can move the sliders to account for centering, surface and edges.
 - **Side-by-side company comparison.** For each grader it shows the service tier, the all-in grading cost per card, the expected sale price, the expected net, the gain versus selling raw, the ROI on grading spend, the chance of beating raw, the break-even grade and the turnaround.

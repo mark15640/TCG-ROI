@@ -142,7 +142,7 @@ export const COMPANIES: GradingCompany[] = [
     id: 'SGC',
     name: 'SGC',
     fullName: 'Sportscard Guaranty',
-    color: '#2d2d2d',
+    color: '#6b7280',
     gradeLabels: { ...STANDARD_LABELS, 8: 'NM/MT 8', 7: 'NM 7', 6: 'EX/NM 6', 4: 'VG/EX 4' },
     returnShippingPerSubmission: 18,
     valueMultipliers: relativeTo(PSA_MULTIPLIERS, 0.75, 0.85),

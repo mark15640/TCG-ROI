@@ -12,6 +12,15 @@ export type Update = (mutate: (draft: Inputs) => void) => void;
 
 const STORAGE_KEY = 'tcg-roi:inputs:v1';
 
+const TABS = [
+  { id: 'results', label: 'Results' },
+  { id: 'odds', label: 'Grade odds' },
+  { id: 'prices', label: 'Prices & tiers' },
+  { id: 'costs', label: 'Fees & shipping' },
+] as const;
+
+type TabId = (typeof TABS)[number]['id'];
+
 function loadInputs(): Inputs {
   const defaults = defaultInputs();
   try {
@@ -39,6 +48,7 @@ function loadInputs(): Inputs {
 
 export default function App() {
   const [inputs, setInputs] = useState<Inputs>(loadInputs);
+  const [tab, setTab] = useState<TabId>('results');
 
   useEffect(() => {
     try {
@@ -62,10 +72,7 @@ export default function App() {
       <header className="app-header">
         <div>
           <h1>TCG Grading ROI</h1>
-          <p className="muted">
-            Should you grade it or sell it raw? Compare PSA, CGC, SGC, BGS and TAG after eBay fees, postage and shipping
-            supplies.
-          </p>
+          <p className="muted">Grade it or sell it raw? Every number is after eBay fees, postage and supplies.</p>
         </div>
         <button
           type="button"
@@ -78,19 +85,38 @@ export default function App() {
         </button>
       </header>
 
-      <div className="layout">
-        <CardSection inputs={inputs} update={update} />
-        <GradeOutlookSection inputs={inputs} update={update} total={analysis.distributionTotal} />
-      </div>
+      <CardSection inputs={inputs} update={update} />
 
-      <ResultsSection analysis={analysis} inputs={inputs} />
-
-      <GradersSection inputs={inputs} update={update} />
-      <CostsSection inputs={inputs} update={update} />
+      <section className="card tabs-card">
+        <nav className="tabs" role="tablist" aria-label="Sections">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              id={`tab-${t.id}`}
+              aria-selected={tab === t.id}
+              aria-controls={`panel-${t.id}`}
+              className={tab === t.id ? 'active' : ''}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+        <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+          {tab === 'results' && <ResultsSection analysis={analysis} inputs={inputs} />}
+          {tab === 'odds' && (
+            <GradeOutlookSection inputs={inputs} update={update} total={analysis.distributionTotal} />
+          )}
+          {tab === 'prices' && <GradersSection inputs={inputs} update={update} />}
+          {tab === 'costs' && <CostsSection inputs={inputs} update={update} />}
+        </div>
+      </section>
 
       <footer className="muted small">
-        Grading fees, eBay rates, postage and grade premiums are estimates that change often — edit any value to match
-        current pricing. Nothing here is financial advice. Your inputs are saved in this browser only.
+        Fees and prices are editable estimates and change often. Not financial advice. Inputs are saved in this browser
+        only.
       </footer>
     </div>
   );
