@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { COMPANIES, GRADES } from '../lib/data';
+import { estimatedSalePrice } from '../lib/calc';
 import type { Inputs } from '../lib/types';
 import { NumberInput, usd } from './fields';
 import type { Update } from '../App';
@@ -104,7 +105,7 @@ export function GradersSection({ inputs, update }: { inputs: Inputs; update: Upd
       </div>
       <p className="muted small">
         {mode === 'comps'
-          ? 'Enter recent sold prices for this card where you have them. Blank cells use the estimate shown (NM price × multiplier).'
+          ? 'Enter recent sold prices for this card where you have them. Blank cells use the estimate shown: scaled from the PSA sold price for that grade when you have entered one, otherwise NM price × multiplier.'
           : 'Default graded value as a multiple of the raw NM price. Premiums vary a lot by card — sold comps are always better.'}
       </p>
       <div className="table-scroll">
@@ -132,7 +133,7 @@ export function GradersSection({ inputs, update }: { inputs: Inputs; update: Upd
                           className="cell"
                           prefix="$"
                           nullable
-                          placeholder={(inputs.nmPrice * s.multipliers[g]).toFixed(0)}
+                          placeholder={estimatedSalePrice(inputs, c.id, g).toFixed(0)}
                           value={s.compOverrides[g] ?? null}
                           ariaLabel={`${c.name} ${g} sold price`}
                           onChange={(v) =>

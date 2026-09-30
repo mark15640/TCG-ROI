@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { analyze, ebayFees, materialsCost, normalizeDistribution, rawPrice, saleResult, selectTier } from './calc';
+import { analyze, ebayFees, gradedSalePrice, materialsCost, normalizeDistribution, rawPrice, saleResult, selectTier } from './calc';
+import { EXAMPLES, applyExample } from './examples';
 import { COMPANY_BY_ID, DEFAULT_EBAY, GRADES, defaultInputs } from './data';
 import type { Grade, GradeMap, Inputs } from './types';
 
@@ -146,5 +147,31 @@ describe('analyze', () => {
   it('reports profit against cost basis when given', () => {
     const a = analyze(inputs({ costBasis: 40 }));
     expect(a.raw.profitVsCostBasis).toBeCloseTo(a.raw.sale.net - 40);
+  });
+});
+
+describe('estimates without comps', () => {
+  it('anchors other companies to the PSA comp for the same grade', () => {
+    const base = defaultInputs();
+    base.companies.PSA.compOverrides = { 9: 360 };
+    const ratio = base.companies.TAG.multipliers[9] / base.companies.PSA.multipliers[9];
+    expect(gradedSalePrice(base, 'TAG', 9)).toEqual({ price: 360 * ratio, fromComp: false });
+    // Grades without a PSA comp still use NM × multiplier.
+    expect(gradedSalePrice(base, 'TAG', 8).price).toBeCloseTo(base.nmPrice * base.companies.TAG.multipliers[8]);
+  });
+});
+
+describe('Charizard ex 199/165 example', () => {
+  it('loads comps and recommends PSA, with only a 10 beating raw', () => {
+    const base = defaultInputs();
+    base.companies.PSA.addOnPerCard = 5; // user settings outside the card survive
+    applyExample(base, EXAMPLES[0]);
+    expect(base.companies.PSA.addOnPerCard).toBe(5);
+    base.companies.PSA.addOnPerCard = 0;
+    const a = analyze(base);
+    expect(a.raw.price).toBe(353);
+    expect(a.recommendation).toBe('grade');
+    expect(a.bestCompanyId).toBe('PSA');
+    for (const c of a.companies) expect(c.breakEvenGrade).toBe(10);
   });
 });

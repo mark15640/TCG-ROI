@@ -1,5 +1,6 @@
 import { COMPANIES, CONDITIONS, GRADE_DISTRIBUTION_PRESETS } from '../lib/data';
 import { rawPrice, saleResult } from '../lib/calc';
+import { EXAMPLES, applyExample } from '../lib/examples';
 import type { Inputs } from '../lib/types';
 import { Field, NumberInput, usd } from './fields';
 import type { Update } from '../App';
@@ -117,6 +118,21 @@ export function CardSection({ inputs, update }: { inputs: Inputs; update: Update
           </div>
           <span className="field-hint">Pick one company to focus on it, or several to compare.</span>
         </div>
+      </div>
+
+      <div className="examples">
+        <span className="muted small">Try a real card:</span>
+        {EXAMPLES.map((ex) => (
+          <button
+            key={ex.id}
+            type="button"
+            className="link"
+            title={`Prices as of ${ex.asOf}. Sources: ${ex.sources}.`}
+            onClick={() => update((d) => applyExample(d, ex))}
+          >
+            {ex.cardName}
+          </button>
+        ))}
       </div>
 
       <details className="disclosure">
